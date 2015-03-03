@@ -90,17 +90,19 @@ function(req, res) {
 /************************************************************/
 
 
-app.post('/login', function(req, res){
+app.post('/signup', function(req, res){
   var userName = req.body.username;
   var password = req.body.password;
+  var user = new User(userName, password);
+
 
   //check the table (using utility function) for the username and password.
-  if(userName == 'demo' && password == 'demo'){
-    res.redirect('/create')
-  }
-  else{
-    res.redirect('/login')
-  }
+  // if(userName == 'demo' && password == 'demo'){
+  //   res.redirect('/create')
+  // }
+  // else{
+  //   res.redirect('/login')
+  // }
 
 
 });
