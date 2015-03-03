@@ -88,14 +88,13 @@ function(req, res) {
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
-app.get('/login', function(req, res){
-  res.send()
-})
+
 
 app.post('/login', function(req, res){
   var userName = req.body.username;
-  var password = req.boduy.password;
+  var password = req.body.password;
 
+  //check the table (using utility function) for the username and password.
   if(userName == 'demo' && password == 'demo'){
     res.redirect('/create')
   }
