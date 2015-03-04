@@ -2,6 +2,7 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
+var bcrypt = require('bcrypt-nodejs');
 
 
 var db = require('./app/config');
@@ -22,27 +23,21 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
+var session = require('express-session');
+app.use(session({
+  secret: 'this is a secret',
+  resave: false,
+  saveUninitialized: true
+}));
 
-app.get('/',
-function(req, res) {
+app.get('/', util.checkUser, function(req, res) {
   res.render('index');
 });
 
-app.get('/create',
-function(req, res) {
+app.get('/create', util.checkUser, function(req, res) {
   res.render('index');
 });
 
-// render login/singup
-app.get('/login',
-function (req, res) {
-  res.render('login');
-});
-
-app.get('/signup',
-function (req, res) {
-  res.render('signup');
-});
 
 app.get('/links',
 function(req, res) {
@@ -88,12 +83,62 @@ function(req, res) {
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
+// render login/singup
+app.get('/login', function (req, res) {
+  res.render('login');
+});
 
+app.get('/signup', function (req, res) {
+  res.render('signup');
+});
+
+app.get('/logout', function(req, res){
+  req.session.destroy(function(){
+    res.redirect('login');
+  });
+});
+
+app.post('/login', function(req, res){
+  var username = req.body.username;
+  var password = req.body.password;
+
+  new User({username: username}).fetch().then(function(user){
+    if(!user) {
+      res.redirect('/login');
+    } else {
+      bcrypt.compare(password, user.get('password'), function (err, match){
+        if (match){
+          util.createSession(req, res, user);
+        } else {
+          res.redirect('/login');
+        }
+      });
+    }
+  });
+});
 
 app.post('/signup', function(req, res){
-  var userName = req.body.username;
+  var username = req.body.username;
   var password = req.body.password;
-  var user = new User(userName, password);
+
+  new User({username: username})
+    .fetch()
+    .then(function(user){
+      if(!user){
+        bcrypt.hash(password, null, null, function(err, hash){
+          Users.create({
+            username: username,
+            password: hash
+          }).then(function(user){
+            util.createSession(req, res, user);
+          });
+        });
+      }else{
+        console.log('account already exists');
+        res.redirect('/signup');
+      }
+    });
+});
 
 
   //check the table (using utility function) for the username and password.
@@ -105,7 +150,6 @@ app.post('/signup', function(req, res){
   // }
 
 
-});
 
 
 
